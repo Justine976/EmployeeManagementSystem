@@ -10,6 +10,8 @@ import javax.swing.JOptionPane;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -46,74 +48,29 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
         endDateField.setText(endOfMonth.toString());
 
         Generate();
-
-        totalWorkDaysField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        DocumentListener genListener = new DocumentListener() {
             @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+            public void insertUpdate(DocumentEvent e) {
                 Generate();
             }
 
             @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+            public void removeUpdate(DocumentEvent e) {
                 Generate();
             }
 
             @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            public void changedUpdate(DocumentEvent e) {
                 Generate();
             }
-        });
+        };
 
-        startDateField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
+        // attach to all fields
+        totalWorkDaysField.getDocument().addDocumentListener(genListener);
+        startDateField.getDocument().addDocumentListener(genListener);
+        endDateField.getDocument().addDocumentListener(genListener);
+        preparedByField.getDocument().addDocumentListener(genListener);
 
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-        });
-
-        endDateField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-        });
-
-        preparedByField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                Generate();
-            }
-        });
     }
 
     public void Generate() {
