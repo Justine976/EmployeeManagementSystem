@@ -4,6 +4,7 @@ import java.awt.HeadlessException;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import javax.swing.JOptionPane;
@@ -48,6 +49,7 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
         endDateField.setText(endOfMonth.toString());
 
         Generate();
+        
         DocumentListener genListener = new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -73,6 +75,32 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
 
     }
 
+    private static double computeWithholdingTaxMonthly(double taxableIncome) {
+        // Based on 2025 TRAIN withholding tax table (monthly income)
+        // 0 – 20,833: 0%
+        // 20,833.01 – 33,333: 15% of excess over 20,833
+        // 33,333.01 – 66,666: 2,500 + 20% of excess over 33,333
+        // 66,666.01 – 166,666: 10,833.33 + 25% of excess over 66,666
+        // 166,666.01 – 666,666: 40,833.33 + 30% of excess over 166,666
+        // above 666,666: 200,833.33 + 35% of excess over 666,666
+
+        double tax = 0.0;
+        if (taxableIncome <= 20833) {
+            tax = 0;
+        } else if (taxableIncome <= 33333) {
+            tax = (taxableIncome - 20833) * 0.15;
+        } else if (taxableIncome <= 66666) {
+            tax = 2500 + (taxableIncome - 33333) * 0.20;
+        } else if (taxableIncome <= 166666) {
+            tax = 10833.33 + (taxableIncome - 66666) * 0.25;
+        } else if (taxableIncome <= 666666) {
+            tax = 40833.33 + (taxableIncome - 166666) * 0.30;
+        } else {
+            tax = 200833.33 + (taxableIncome - 666666) * 0.35;
+        }
+        return tax;
+    }
+
     public void Generate() {
         try {
             String startDate = startDateField.getText();
@@ -89,15 +117,11 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
                 String employeeName = rs.getString("full_name");
                 String position = rs.getString("position");
                 double monthlySalary = rs.getDouble("salary");
-//                double halfOfMonthlySalary = monthlySalary * 0.5;
 
                 int totalWorkingDays = 0;
                 if (!totalWorkDaysField.getText().isEmpty()) {
                     totalWorkingDays = Integer.parseInt(totalWorkDaysField.getText());
                 }
-
-                // Compute daily rate
-                double dailyRate = monthlySalary / totalWorkingDays;
 
                 // Count total present and absent days from attendance
                 String countPresentQuery = "SELECT COUNT(*) AS total_present FROM attendance_table "
@@ -118,11 +142,77 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
                     absentDays = 0;
                 }
 
-                // Compute deductions and net pay
-                double absenceDeduction = absentDays * dailyRate;
-                double netPay = (totalWorkingDays - absentDays) * dailyRate;
+                // 1. Get total work hours from attendance table
+                String sql = "SELECT SUM(total_hours) AS total_hours_worked "
+                        + "FROM attendance_table "
+                        + "WHERE employee_id = ? AND date >= ? AND date <= ?";
+                pstmt = mainFrame.connection.prepareStatement(sql);
+                pstmt.setInt(1, id);
+                pstmt.setDate(2, Date.valueOf(startDate));
+                pstmt.setDate(3, Date.valueOf(endDate));
+                rs = pstmt.executeQuery();
+                double totalHoursWorked = 0;
+                if (rs.next()) {
+                    totalHoursWorked = rs.getDouble("total_hours_worked");
+                }
 
-                // Insert payroll record
+                // 2. Calculate hourly rate
+                int standardMonthlyHours = totalWorkingDays * 8; // 26 days x 8 hours/day
+                double hourlyRate = monthlySalary / standardMonthlyHours;
+
+                // 3. Calculate gross pay based on actual hours
+                double grossPay = hourlyRate * totalHoursWorked;
+
+                // 4. Compute deductions (using same rules as monthly, prorate for hours)
+                double sss = (monthlySalary * 0.05) * (totalHoursWorked / standardMonthlyHours);
+                double philHealth = (monthlySalary * 0.025) * (totalHoursWorked / standardMonthlyHours);
+                double pagibig = Math.min(monthlySalary, 10000) * 0.02 * (totalHoursWorked / standardMonthlyHours);
+
+                // Taxable income
+                double taxableIncome = grossPay - (sss + philHealth + pagibig);
+                double tax = computeWithholdingTaxMonthly(taxableIncome); // simplified monthly tax
+
+                double totalDeductions = sss + philHealth + pagibig + tax;
+                double netPay = grossPay - totalDeductions;
+
+                if (!(totalHoursWorked > standardMonthlyHours)) {
+                    String payslip
+                            = "----------------------------------------\n"
+                            + "                PAYSLIP\n"
+                            + "----------------------------------------\n"
+                            + "EMPLOYEE INFO\n"
+                            + "----------------------------------------\n"
+                            + "Employee Name      : " + employeeName + "\n"
+                            + "Employee ID        : " + id + "\n"
+                            + "Position           : " + position + "\n"
+                            + "Monthly Salary     : " + String.format("%.2f", monthlySalary) + "\n"
+                            + "Total Present      : " + totalPresent + "\n"
+                            + "Total Absent       : " + absentDays + "\n"
+                            + "Total Hours Worked : " + String.format("%.2f", totalHoursWorked) + "\n"
+                            + "Standard Work Days : " + totalWorkingDays + "\n"
+                            + "Standard Hours     : " + standardMonthlyHours + "\n"
+                            + "Hourly Rate        : " + String.format("%.2f", hourlyRate) + "\n"
+                            + "----------------------------------------\n"
+                            + "EARNINGS\n"
+                            + "----------------------------------------\n"
+                            + "Gross Pay          : " + String.format("%.2f", grossPay) + "\n"
+                            + "----------------------------------------\n"
+                            + "DEDUCTIONS\n"
+                            + "----------------------------------------\n"
+                            + "SSS                : " + String.format("%.2f", sss) + "\n"
+                            + "PhilHealth         : " + String.format("%.2f", philHealth) + "\n"
+                            + "Pag-IBIG           : " + String.format("%.2f", pagibig) + "\n"
+                            + "Taxable Income     : " + String.format("%.2f", taxableIncome) + "\n"
+                            + "Tax                : " + String.format("%.2f", tax) + "\n"
+                            + "Total Deduction    : " + String.format("%.2f", totalDeductions) + "\n"
+                            + "----------------------------------------\n"
+                            + "NET PAY            : " + String.format("%.2f", netPay) + "\n"
+                            + "----------------------------------------\n"
+                            + "Date               : " + today + "\n"
+                            + "Prepared by        : " + preparedByField.getText() + "\n";
+                    receiptArea.setText(payslip);
+
+                    // Insert payroll record
 //                String insertPayroll = "INSERT INTO payroll_table (employee_id, total_working_days, absent_days, daily_rate, absence_deduction, net_pay, pay_period) "
 //                        + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 //                pstmt = mainFrame.connection.prepareStatement(insertPayroll);
@@ -134,22 +224,7 @@ public class GeneratePayslipPanel extends javax.swing.JPanel {
 //                pstmt.setDouble(6, netPay);
 //                pstmt.setString(7, payPeriod);
 //                pstmt.executeUpdate();
-                receiptArea.setText("\n"
-                        + "----------------------------------------\n"
-                        + "                 PAYSLIP                \n"
-                        + "----------------------------------------\n"
-                        + "Employee ID: " + id + "\n"
-                        + "Name       : " + employeeName + "\n"
-                        + "Position   : " + position + "\n"
-                        + "----------------------------------------\n"
-                        + "Basic Salary     : " + String.format("%.2f", monthlySalary) + "\n"
-                        + "Absence Deduction: " + String.format("%.2f", absenceDeduction) + "\n"
-                        + "----------------------------------------\n"
-                        + "NET PAY    : " + String.format("%.2f", netPay) + "\n"
-                        + "----------------------------------------\n"
-                        + "Date: " + today + "\n\n"
-                        + "Signature  : _____________________________\n"
-                        + "Prepared by: " + preparedByField.getText() + "\n");
+                }
             }
         } catch (HeadlessException | SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error generating payslip: " + ex.getMessage());

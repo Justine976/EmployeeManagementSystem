@@ -8,6 +8,9 @@ import javax.swing.table.DefaultTableModel;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.time.LocalDate;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 
 /*
@@ -20,6 +23,7 @@ import java.sql.PreparedStatement;
  */
 public class AttendanceListPanel extends javax.swing.JPanel {
 
+    LocalDate today = LocalDate.now();
     MainFrame mainFrame;
 
     /**
@@ -29,59 +33,91 @@ public class AttendanceListPanel extends javax.swing.JPanel {
         this.mainFrame = mainFrame;
         initComponents();
         fetch();
-
+        
         javax.swing.SwingUtilities.invokeLater(() -> searchField.requestFocusInWindow());
 
+        DocumentListener genListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                searchAction();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                searchAction();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                searchAction();
+            }
+        };
+
         searchField = (JTextField) searchComboBox.getEditor().getEditorComponent();
-        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                searchAction();
+        searchField.getDocument().addDocumentListener(genListener);
+        
+    }
+
+    private void searchDateAction() {
+        String text = dateComboBox.getSelectedItem().toString().trim();
+
+        try {
+            String sql = "SELECT * FROM employees_table "
+                    + "LEFT JOIN attendance_table ON employees_table.employee_id = attendance_table.employee_id "
+                    + "WHERE attendance_table.date LIKE ? "
+                    + "ORDER BY attendance_table.date DESC";
+            PreparedStatement pstmt = mainFrame.connection.prepareStatement(sql);
+            pstmt.setString(1, "%" + text + "%");
+            ResultSet rs = pstmt.executeQuery();
+
+            DefaultTableModel dtm = (DefaultTableModel) attendanceTable.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                Vector v2 = new Vector();
+                v2.add(rs.getString("employee_id"));
+                v2.add(rs.getString("full_name"));
+                v2.add(rs.getString("date"));
+                v2.add(rs.getString("time_in"));
+                v2.add(rs.getString("time_out"));
+                dtm.addRow(v2);
             }
+        } catch (SQLException ex) {
+            Logger.getLogger(AttendanceListPanel.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "Searching Failed!\n" + ex.getLocalizedMessage());
+        }
+    }
 
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                searchAction();
+    private void searchAction() {
+        String text = searchField.getText().trim();
+
+        try {
+            String sql = "SELECT * FROM employees_table "
+                    + "LEFT JOIN attendance_table ON employees_table.employee_id = attendance_table.employee_id "
+                    + "WHERE employees_table.employee_id LIKE ? "
+                    + "OR employees_table.full_name LIKE ? "
+                    + "OR attendance_table.date LIKE ? "
+                    + "ORDER BY attendance_table.date DESC";
+            PreparedStatement pstmt = mainFrame.connection.prepareStatement(sql);
+            pstmt.setString(1, "%" + text + "%");
+            pstmt.setString(2, "%" + text + "%");
+            pstmt.setString(3, "%" + text + "%");
+            ResultSet rs = pstmt.executeQuery();
+
+            DefaultTableModel dtm = (DefaultTableModel) attendanceTable.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                Vector v2 = new Vector();
+                v2.add(rs.getString("employee_id"));
+                v2.add(rs.getString("full_name"));
+                v2.add(rs.getString("date"));
+                v2.add(rs.getString("time_in"));
+                v2.add(rs.getString("time_out"));
+                dtm.addRow(v2);
             }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                searchAction();
-            }
-
-            private void searchAction() {
-                String text = searchField.getText().trim();
-
-                try {
-                    String sql = "SELECT * FROM employees_table "
-                            + "LEFT JOIN attendance_table ON employees_table.employee_id = attendance_table.employee_id "
-                            + "WHERE employees_table.employee_id LIKE ? "
-                            + "OR employees_table.full_name LIKE ? "
-                            + "OR attendance_table.date LIKE ? "
-                            + "ORDER BY attendance_table.date DESC";
-                    PreparedStatement pstmt = mainFrame.connection.prepareStatement(sql);
-                    pstmt.setString(1, "%" + text + "%");
-                    pstmt.setString(2, "%" + text + "%");
-                    pstmt.setString(3, "%" + text + "%");
-                    ResultSet rs = pstmt.executeQuery();
-
-                    DefaultTableModel dtm = (DefaultTableModel) attendanceTable.getModel();
-                    dtm.setRowCount(0);
-                    while (rs.next()) {
-                        Vector v2 = new Vector();
-                        v2.add(rs.getString("employee_id"));
-                        v2.add(rs.getString("full_name"));
-                        v2.add(rs.getString("date"));
-                        v2.add(rs.getString("time_in"));
-                        v2.add(rs.getString("time_out"));
-                        dtm.addRow(v2);
-                    }
-                } catch (SQLException ex) {
-                    Logger.getLogger(AttendanceListPanel.class.getName()).log(Level.SEVERE, null, ex);
-                    JOptionPane.showMessageDialog(null, "Searching Failed!\n" + ex.getLocalizedMessage());
-                }
-            }
-        });
+        } catch (SQLException ex) {
+            Logger.getLogger(AttendanceListPanel.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "Searching Failed!\n" + ex.getLocalizedMessage());
+        }
     }
 
     public void fetch() {
@@ -114,10 +150,14 @@ public class AttendanceListPanel extends javax.swing.JPanel {
             PreparedStatement pstmt = mainFrame.connection.prepareStatement("SELECT DISTINCT date FROM attendance_table ORDER BY date DESC");
             ResultSet rs = pstmt.executeQuery();
             searchComboBox.removeAllItems();
+            dateComboBox.removeAllItems();
             while (rs.next()) {
                 searchComboBox.addItem(rs.getString(1));
+                dateComboBox.addItem(rs.getString(1));
             }
             searchComboBox.setSelectedIndex(-1);
+            dateComboBox.setSelectedItem(today.toString());
+            dateComboBox.addItem("");
         } catch (SQLException ex) {
             Logger.getLogger(ViewEmployeesPanel.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(this, "LoadComboBox Failed!\n" + ex.getMessage());
@@ -139,6 +179,7 @@ public class AttendanceListPanel extends javax.swing.JPanel {
         searchPanel = new javax.swing.JPanel();
         searchLabel = new javax.swing.JLabel();
         searchComboBox = new javax.swing.JComboBox<>();
+        dateComboBox = new javax.swing.JComboBox<>();
         jScrollPane1 = new javax.swing.JScrollPane();
         attendanceTable = new javax.swing.JTable();
 
@@ -169,6 +210,18 @@ public class AttendanceListPanel extends javax.swing.JPanel {
         searchComboBox.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         searchComboBox.setPreferredSize(new java.awt.Dimension(400, 30));
         searchPanel.add(searchComboBox, new java.awt.GridBagConstraints());
+
+        dateComboBox.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        dateComboBox.setMinimumSize(new java.awt.Dimension(120, 30));
+        dateComboBox.setPreferredSize(new java.awt.Dimension(120, 30));
+        dateComboBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dateComboBoxActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 0);
+        searchPanel.add(dateComboBox, gridBagConstraints);
 
         centerPanel.add(searchPanel, java.awt.BorderLayout.PAGE_START);
 
@@ -203,10 +256,15 @@ public class AttendanceListPanel extends javax.swing.JPanel {
         add(centerPanel, new java.awt.GridBagConstraints());
     }// </editor-fold>//GEN-END:initComponents
 
+    private void dateComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateComboBoxActionPerformed
+        searchDateAction();
+    }//GEN-LAST:event_dateComboBoxActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable attendanceTable;
     private javax.swing.JPanel centerPanel;
+    private javax.swing.JComboBox<String> dateComboBox;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JComboBox<String> searchComboBox;
     private javax.swing.JTextField searchField;
