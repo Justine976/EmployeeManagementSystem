@@ -11,24 +11,24 @@ public class generateAttendanceSample {
     
     public static void generate(){
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/employee_management_database", "root", "");
+            Connection connection = DriverManager.getConnection("jdbc:sqlite:employee_management_database.db");
             Statement stmt = connection.createStatement();
 
             // -------------------- ATTENDANCE TABLE --------------------
             String createAttendanceTable = "CREATE TABLE IF NOT EXISTS attendance_table ("
-                    + "attendance_id INT AUTO_INCREMENT PRIMARY KEY, "
-                    + "employee_id INT NOT NULL, "
-                    + "date DATE NOT NULL, "
-                    + "time_in TIME, "
-                    + "time_out TIME, "
-                    + "total_hours DECIMAL(5,2), "
-                    + "status VARCHAR(20) DEFAULT 'Present', "
+                    + "attendance_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + "employee_id INTEGER NOT NULL, "
+                    + "date TEXT NOT NULL, "
+                    + "time_in TEXT, "
+                    + "time_out TEXT, "
+                    + "total_hours REAL, "
+                    + "status TEXT DEFAULT 'Present', "
                     + "FOREIGN KEY (employee_id) REFERENCES employees_table(employee_id) "
                     + "ON DELETE CASCADE ON UPDATE CASCADE)";
             stmt.execute(createAttendanceTable);
 
             // ---------- INSERT SAMPLE Time In/Out for EMPLOYEES ----------
-            String insertAttendance = "INSERT IGNORE INTO attendance_table"
+            String insertAttendance = "INSERT OR IGNORE INTO attendance_table"
                     + "(employee_id, date, time_in, time_out, total_hours, status) VALUES"
                     + "(1000, '2025-12-12', '09:33:00', '17:15:00', 7.70, 'Present'), "
                     + "(1000, '2025-12-27', '09:12:00', '16:03:00', 6.85, 'Present'), "
