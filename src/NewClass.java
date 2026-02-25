@@ -30,31 +30,31 @@ public class NewClass {
 
     public void connect() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:employee_management_database.db");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost/employee_management_database", "root", "");
             Statement stmt = connection.createStatement();
 
             // -------------------- USERS TABLE --------------------
             String createUsersTable = "CREATE TABLE IF NOT EXISTS users_table ("
-                    + "user_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "admin INTEGER NOT NULL, "
+                    + "user_id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "admin BOOLEAN NOT NULL, "
                     + "username VARCHAR(50) UNIQUE NOT NULL, "
                     + "password VARCHAR(255) NOT NULL)";
             stmt.execute(createUsersTable);
 
             // Default admin account
             stmt.executeUpdate(
-                    "INSERT OR IGNORE INTO users_table (admin, username, password) VALUES "
+                    "INSERT IGNORE INTO users_table (admin, username, password) VALUES "
                     + "(1, 'admin', 'admin') "
             );
 
             // -------------------- EMPLOYEES TABLE --------------------
             String createEmployeesTable = "CREATE TABLE IF NOT EXISTS employees_table ("
-                    + "employee_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + "employee_id INT AUTO_INCREMENT PRIMARY KEY, "
                     + "photo_path VARCHAR(255) NOT NULL, "
                     + "full_name VARCHAR(200) NOT NULL, "
                     + "birth_date DATE NOT NULL, "
-                    + "gender TEXT NOT NULL, "
+                    + "gender ENUM('Male','Female','Other') NOT NULL, "
                     + "address TEXT NOT NULL, "
                     + "contact_number VARCHAR(20) NOT NULL, "
                     + "email_address VARCHAR(200) UNIQUE NOT NULL, "
@@ -65,11 +65,10 @@ public class NewClass {
             stmt.execute(createEmployeesTable);
 
             // Start employee_id at 1000 for cleaner IDs
-            stmt.executeUpdate("INSERT OR IGNORE INTO employees_table (employee_id, photo_path, full_name, birth_date, gender, address, contact_number, email_address, position, department, salary, hired_date) VALUES (999, 'photos/emp1.jpg', 'Seed Employee', '1990-01-01', 'Other', 'Seed City', '09000000000', 'seed.employee@example.com', 'Seed', 'Seed', 1, '2020-01-01')");
-            stmt.executeUpdate("DELETE FROM employees_table WHERE employee_id = 999");
+            stmt.executeUpdate("ALTER TABLE employees_table AUTO_INCREMENT = 1000;");
 
             // -------------------- INSERT SAMPLE EMPLOYEES --------------------
-            String insertEmployees = "INSERT OR IGNORE INTO employees_table "
+            String insertEmployees = "INSERT IGNORE INTO employees_table "
                     + "(photo_path, full_name, birth_date, gender, address, contact_number, email_address, position, department, salary, hired_date) VALUES "
                     + "('photos/emp1.jpg', 'Juan Dela Cruz', '1995-04-12', 'Male', 'Manila City', '09171234567', 'juan.cruz@example.com', 'Software Engineer', 'IT Department', 35000.00, '2022-03-10'), "
                     + "('photos/emp2.jpg', 'Maria Santos', '1998-07-21', 'Female', 'Quezon City', '09281234567', 'maria.santos@example.com', 'HR Officer', 'Human Resources', 30000.00, '2021-11-05'), "

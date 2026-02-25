@@ -81,85 +81,82 @@ public class MainFrame extends javax.swing.JFrame {
 
     public void Connect() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:employee_management_database.db");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost/employee_management_database", "root", "");
             Statement stmt = connection.createStatement();
-            stmt.execute("PRAGMA foreign_keys = ON");
 
             // -------------------- USERS TABLE --------------------
             String createUsersTable = "CREATE TABLE IF NOT EXISTS users_table ("
-                    + "user_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "admin INTEGER NOT NULL CHECK (admin IN (0,1)), "
-                    + "username TEXT UNIQUE NOT NULL, "
-                    + "password TEXT NOT NULL)";
+                    + "user_id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "admin BOOLEAN NOT NULL, "
+                    + "username VARCHAR(50) UNIQUE NOT NULL, "
+                    + "password VARCHAR(255) NOT NULL)";
             stmt.execute(createUsersTable);
 
             // Default admin account
             stmt.executeUpdate(
-                    "INSERT OR IGNORE INTO users_table (user_id, admin, username, password) VALUES "
-                    + "(1, 1, 'admin', 'admin') "
+                    "INSERT IGNORE INTO users_table (admin, username, password) VALUES "
+                    + "(1, 'admin', 'admin') "
             );
 
             // -------------------- EMPLOYEES TABLE --------------------
             String createEmployeesTable = "CREATE TABLE IF NOT EXISTS employees_table ("
-                    + "employee_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "photo_path TEXT NOT NULL, "
-                    + "full_name TEXT NOT NULL, "
-                    + "birth_date TEXT NOT NULL, "
-                    + "gender TEXT NOT NULL CHECK (gender IN ('Male','Female','Other')), "
+                    + "employee_id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "photo_path VARCHAR(255) NOT NULL, "
+                    + "full_name VARCHAR(200) NOT NULL, "
+                    + "birth_date DATE NOT NULL, "
+                    + "gender ENUM('Male','Female','Other') NOT NULL, "
                     + "address TEXT NOT NULL, "
-                    + "contact_number TEXT NOT NULL, "
-                    + "email_address TEXT UNIQUE NOT NULL, "
-                    + "position TEXT NOT NULL, "
-                    + "department TEXT NOT NULL, "
-                    + "salary REAL NOT NULL, "
-                    + "hired_date TEXT NOT NULL)";
+                    + "contact_number VARCHAR(20) NOT NULL, "
+                    + "email_address VARCHAR(200) UNIQUE NOT NULL, "
+                    + "position VARCHAR(100) NOT NULL, "
+                    + "department VARCHAR(100) NOT NULL, "
+                    + "salary DECIMAL(10,2) NOT NULL, "
+                    + "hired_date DATE NOT NULL)";
             stmt.execute(createEmployeesTable);
 
             // Start employee_id at 1000 for cleaner IDs
-            stmt.executeUpdate("INSERT OR IGNORE INTO employees_table (employee_id, photo_path, full_name, birth_date, gender, address, contact_number, email_address, position, department, salary, hired_date) "
-                    + "VALUES (999, 'photos/emp1.jpg', 'Seed Employee', '1990-01-01', 'Other', 'Seed City', '09000000000', 'seed.employee@example.com', 'Seed', 'Seed', 1, '2020-01-01')");
-            stmt.executeUpdate("DELETE FROM employees_table WHERE employee_id = 999");
+            stmt.executeUpdate("ALTER TABLE employees_table AUTO_INCREMENT = 1000;");
 
             // -------------------- INSERT SAMPLE EMPLOYEES --------------------
-            String insertEmployees = "INSERT OR IGNORE INTO employees_table "
-                    + "(employee_id, photo_path, full_name, birth_date, gender, address, contact_number, email_address, position, department, salary, hired_date) VALUES "
-                    + "(1000, 'photos/emp1.jpg', 'Juan Dela Cruz', '1995-04-12', 'Male', 'Manila City', '09171234567', 'juan.cruz@example.com', 'Software Engineer', 'IT Department', 35000.00, '2022-03-10'), "
-                    + "(1001, 'photos/emp2.jpg', 'Maria Santos', '1998-07-21', 'Female', 'Quezon City', '09281234567', 'maria.santos@example.com', 'HR Officer', 'Human Resources', 30000.00, '2021-11-05'), "
-                    + "(1002, 'photos/emp3.jpg', 'Mark Reyes', '1992-01-18', 'Male', 'Pasig City', '09181231234', 'mark.reyes@example.com', 'Accountant', 'Finance', 32000.00, '2020-06-15'), "
-                    + "(1003, 'photos/emp4.jpg', 'Angela Cruz', '1996-10-04', 'Female', 'Cebu City', '09351231231', 'angela.cruz@.com', 'Graphic Designer', 'Marketing', 28000.00, '2023-01-12'), "
-                    + "(1004, 'photos/emp5.jpg', 'John Bautista', '1993-03-09', 'Male', 'Davao City', '09491234567', 'john.bautista@example.com', 'IT Support', 'IT Department', 26000.00, '2021-05-20'), "
-                    + "(1005, 'photos/emp6.jpg', 'Catherine Lim', '1997-12-11', 'Female', 'Makati City', '09291231231', 'catherine.lim@example.com', 'Sales Associate', 'Sales', 25000.00, '2022-10-01'), "
-                    + "(1006, 'photos/emp7.jpg', 'Joseph Tan', '1990-02-27', 'Male', 'Taguig City', '09191231212', 'joseph.tan@example.com', 'Project Manager', 'Operations', 45000.00, '2019-04-08'), "
-                    + "(1007, 'photos/emp8.jpg', 'Elaine Garcia', '1999-05-30', 'Female', 'Las Piñas City', '09301231231', 'elaine.garcia@example.com', 'Receptionist', 'Front Desk', 20000.00, '2023-08-03'), "
-                    + "(1008, 'photos/emp9.jpg', 'Patrick Villanueva', '1994-09-23', 'Male', 'Caloocan City', '09181231234', 'patrick.villanueva@example.com', 'Network Technician', 'IT Department', 27000.00, '2021-09-10'), "
-                    + "(1009, 'photos/emp10.jpg', 'Liza Ramos', '1991-06-25', 'Female', 'Baguio City', '09271231231', 'liza.ramos@example.com', 'Administrative Assistant', 'Admin', 23000.00, '2020-02-17');";
+            String insertEmployees = "INSERT IGNORE INTO employees_table "
+                    + "(photo_path, full_name, birth_date, gender, address, contact_number, email_address, position, department, salary, hired_date) VALUES "
+                    + "('photos/emp1.jpg', 'Juan Dela Cruz', '1995-04-12', 'Male', 'Manila City', '09171234567', 'juan.cruz@example.com', 'Software Engineer', 'IT Department', 35000.00, '2022-03-10'), "
+                    + "('photos/emp2.jpg', 'Maria Santos', '1998-07-21', 'Female', 'Quezon City', '09281234567', 'maria.santos@example.com', 'HR Officer', 'Human Resources', 30000.00, '2021-11-05'), "
+                    + "('photos/emp3.jpg', 'Mark Reyes', '1992-01-18', 'Male', 'Pasig City', '09181231234', 'mark.reyes@example.com', 'Accountant', 'Finance', 32000.00, '2020-06-15'), "
+                    + "('photos/emp4.jpg', 'Angela Cruz', '1996-10-04', 'Female', 'Cebu City', '09351231231', 'angela.cruz@.com', 'Graphic Designer', 'Marketing', 28000.00, '2023-01-12'), "
+                    + "('photos/emp5.jpg', 'John Bautista', '1993-03-09', 'Male', 'Davao City', '09491234567', 'john.bautista@example.com', 'IT Support', 'IT Department', 26000.00, '2021-05-20'), "
+                    + "('photos/emp6.jpg', 'Catherine Lim', '1997-12-11', 'Female', 'Makati City', '09291231231', 'catherine.lim@example.com', 'Sales Associate', 'Sales', 25000.00, '2022-10-01'), "
+                    + "('photos/emp7.jpg', 'Joseph Tan', '1990-02-27', 'Male', 'Taguig City', '09191231212', 'joseph.tan@example.com', 'Project Manager', 'Operations', 45000.00, '2019-04-08'), "
+                    + "('photos/emp8.jpg', 'Elaine Garcia', '1999-05-30', 'Female', 'Las Piñas City', '09301231231', 'elaine.garcia@example.com', 'Receptionist', 'Front Desk', 20000.00, '2023-08-03'), "
+                    + "('photos/emp9.jpg', 'Patrick Villanueva', '1994-09-23', 'Male', 'Caloocan City', '09181231234', 'patrick.villanueva@example.com', 'Network Technician', 'IT Department', 27000.00, '2021-09-10'), "
+                    + "('photos/emp10.jpg', 'Liza Ramos', '1991-06-25', 'Female', 'Baguio City', '09271231231', 'liza.ramos@example.com', 'Administrative Assistant', 'Admin', 23000.00, '2020-02-17');";
             stmt.executeUpdate(insertEmployees);
 
             // -------------------- ATTENDANCE TABLE --------------------
             String createAttendanceTable = "CREATE TABLE IF NOT EXISTS attendance_table ("
-                    + "attendance_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "employee_id INTEGER NOT NULL, "
-                    + "date TEXT NOT NULL, "
-                    + "time_in TEXT, "
-                    + "time_out TEXT, "
-                    + "total_hours REAL, "
-                    + "status TEXT DEFAULT 'Present', "
+                    + "attendance_id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "employee_id INT NOT NULL, "
+                    + "date DATE NOT NULL, "
+                    + "time_in TIME, "
+                    + "time_out TIME, "
+                    + "total_hours DECIMAL(5,2), "
+                    + "status VARCHAR(20) DEFAULT 'Present', "
                     + "FOREIGN KEY (employee_id) REFERENCES employees_table(employee_id) "
                     + "ON DELETE CASCADE ON UPDATE CASCADE)";
             stmt.execute(createAttendanceTable);
 
             // -------------------- PAYROLL TABLE --------------------
             String createPayrollTable = "CREATE TABLE IF NOT EXISTS payroll_table ("
-                    + "payroll_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "employee_id INTEGER NOT NULL, "
-                    + "total_working_days INTEGER NOT NULL, "
-                    + "absent_days INTEGER NOT NULL, "
-                    + "daily_rate REAL NOT NULL, "
-                    + "absence_deduction REAL NOT NULL, "
-                    + "net_pay REAL NOT NULL, "
-                    + "pay_period TEXT NOT NULL, "
-                    + "pay_date TEXT DEFAULT CURRENT_DATE, "
+                    + "payroll_id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "employee_id INT NOT NULL, "
+                    + "total_working_days INT NOT NULL, "
+                    + "absent_days INT NOT NULL, "
+                    + "daily_rate DECIMAL(10,2) NOT NULL, "
+                    + "absence_deduction DECIMAL(10,2) NOT NULL, "
+                    + "net_pay DECIMAL(10,2) NOT NULL, "
+                    + "pay_period VARCHAR(50) NOT NULL, "
+                    + "pay_date DATE DEFAULT CURRENT_DATE, "
                     + "FOREIGN KEY (employee_id) REFERENCES employees_table(employee_id) "
                     + "ON DELETE CASCADE ON UPDATE CASCADE)";
             stmt.execute(createPayrollTable);

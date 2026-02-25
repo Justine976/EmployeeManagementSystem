@@ -123,7 +123,7 @@ public class PayrollCalculator {
     public static void main(String[] args) throws Exception {
         // Setup DB connection
         Connection conn = DriverManager.getConnection(
-                "jdbc:sqlite:employee_management_database.db");
+                "jdbc:mysql://localhost:3306/employee_management_database", "root", "");
 
         computePayroll(
                 conn, 1005,
