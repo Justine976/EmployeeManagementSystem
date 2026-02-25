@@ -205,45 +205,16 @@ public class SettingsPanel extends javax.swing.JPanel {
         }
     }
 
-    public static void clearQrCodesDirectory(File folder) {
-        if (!folder.exists()) {
-            folder.mkdirs();
-            return;
-        }
-
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    clearQrCodesDirectory(file);
-                    file.delete();
-                } else {
-                    file.delete();
+    public static void deleteFolder(File folder) {
+        if (folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteFolder(f); // delete inside files/subfolders
                 }
             }
         }
-    }
-
-    public static void clearUserUploadedPhotos(File folder) {
-        if (!folder.exists()) {
-            folder.mkdirs();
-            return;
-        }
-
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    clearUserUploadedPhotos(file);
-                    file.delete();
-                } else {
-                    String name = file.getName().toLowerCase();
-                    if (!(name.matches("emp\\d+\\.jpg") || name.matches("emp\\d+\\.jpeg") || name.matches("emp\\d+\\.png"))) {
-                        file.delete();
-                    }
-                }
-            }
-        }
+        folder.delete(); // delete the folder or file
     }
 
     /**
@@ -696,14 +667,20 @@ public class SettingsPanel extends javax.swing.JPanel {
         if (JOptionPane.showConfirmDialog(this, "Are you sure you want to RESET The DATABASE? This Cannot be Undone", "Confirmation",
                 JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
+                PreparedStatement pstmt;
+
                 File photoFile = new File("photos/");
-                clearUserUploadedPhotos(photoFile);
+                deleteFolder(photoFile);
                 File qrFile = new File("qrcodes/");
-                clearQrCodesDirectory(qrFile);
+                deleteFolder(qrFile);
 
-                System.out.println(photoFile.getName() + " and " + qrFile.getName() + " generated data cleared");
+                System.out.println(photoFile.getName() + " and " + qrFile.getName() + " File Deleted");
 
-                DatabaseManager.resetDatabaseData(mainFrame.connection);
+                pstmt = mainFrame.connection.prepareStatement("DROP DATABASE employee_management_database");
+                pstmt.executeUpdate();
+
+                pstmt = mainFrame.connection.prepareStatement("CREATE DATABASE employee_management_database");
+                pstmt.executeUpdate();
 
                 JOptionPane.showMessageDialog(this, "RESET Successful!");
 
