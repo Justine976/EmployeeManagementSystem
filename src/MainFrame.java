@@ -127,7 +127,7 @@ public class MainFrame extends javax.swing.JFrame {
                     + "(1000, 'photos/emp1.jpg', 'Juan Dela Cruz', '1995-04-12', 'Male', 'Manila City', '09171234567', 'juan.cruz@example.com', 'Software Engineer', 'IT Department', 35000.00, '2022-03-10'), "
                     + "(1001, 'photos/emp2.jpg', 'Maria Santos', '1998-07-21', 'Female', 'Quezon City', '09281234567', 'maria.santos@example.com', 'HR Officer', 'Human Resources', 30000.00, '2021-11-05'), "
                     + "(1002, 'photos/emp3.jpg', 'Mark Reyes', '1992-01-18', 'Male', 'Pasig City', '09181231234', 'mark.reyes@example.com', 'Accountant', 'Finance', 32000.00, '2020-06-15'), "
-                    + "(1003, 'photos/emp4.jpg', 'Angela Cruz', '1996-10-04', 'Female', 'Cebu City', '09351231231', 'angela.cruz@example.com', 'Graphic Designer', 'Marketing', 28000.00, '2023-01-12'), "
+                    + "(1003, 'photos/emp4.jpg', 'Angela Cruz', '1996-10-04', 'Female', 'Cebu City', '09351231231', 'angela.cruz@.com', 'Graphic Designer', 'Marketing', 28000.00, '2023-01-12'), "
                     + "(1004, 'photos/emp5.jpg', 'John Bautista', '1993-03-09', 'Male', 'Davao City', '09491234567', 'john.bautista@example.com', 'IT Support', 'IT Department', 26000.00, '2021-05-20'), "
                     + "(1005, 'photos/emp6.jpg', 'Catherine Lim', '1997-12-11', 'Female', 'Makati City', '09291231231', 'catherine.lim@example.com', 'Sales Associate', 'Sales', 25000.00, '2022-10-01'), "
                     + "(1006, 'photos/emp7.jpg', 'Joseph Tan', '1990-02-27', 'Male', 'Taguig City', '09191231212', 'joseph.tan@example.com', 'Project Manager', 'Operations', 45000.00, '2019-04-08'), "
