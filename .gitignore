@@ -1,0 +1,25 @@
+# ----- Build outputs (NetBeans Ant project) -----
+/build/
+/dist/
+
+# NetBeans user-specific files (keep nbproject/*.xml and project.properties)
+nbproject/private/
+
+# ----- Database (runtime-generated, auto-created on first launch) -----
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# ----- Runtime-generated app files -----
+qrcodes/
+*.log
+
+# ----- Compiled Java (kept out; jars/ is intentionally vendored and tracked) -----
+*.class
+
+# ----- OS junk files -----
+Thumbs.db
+.DS_Store
+desktop.ini
