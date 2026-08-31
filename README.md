@@ -1,3 +1,5 @@
+![Project Screenshot](src/resources/Screenshot%202026-08-31%20104109.png)
+
 # Employee Management System
 
 A desktop **Employee Management System** built with **Java Swing** and **SQLite**, developed in **NetBeans**.
